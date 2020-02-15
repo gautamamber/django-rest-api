@@ -18,3 +18,24 @@ def article_list(request):
             serializer.save()
             return JsonResponse(serializer.data, status=201)
         return JsonResponse(serializer.errors, status=400)
+
+
+@csrf_exempt
+def article_detail(request, pk):
+    try:
+        article = Article.objects.get(pk=pk)
+    except Article.DoesNotExist:
+        return HttpResponse(status=400)
+    if request.method == "GET":
+        serializer = ArticleModelSerializer(article)
+        return JsonResponse(serializer.data)
+    elif request.method == "DELETE":
+        article.delete()
+        return HttpResponse(status=204)
+    elif request.method == "PUT":
+        data = JSONParser().parse(request)
+        serializer = ArticleModelSerializer(article, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data)
+        return JsonResponse(serializer.errors, status=400)
