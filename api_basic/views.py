@@ -7,6 +7,7 @@ from .models import Article
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
+from rest_framework.views import APIView
 
 
 # @csrf_exempt
@@ -18,8 +19,7 @@ def article_list(request):
         # return JsonResponse(serializer.data, safe=False)
         return Response(serializer.data)
     elif request.method == "POST":
-        data = JSONParser().parse(request)
-        serializer = ArticleModelSerializer(data=data)
+        serializer = ArticleModelSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -47,3 +47,32 @@ def article_detail(request, pk):
             serializer.save()
             return JsonResponse(serializer.data)
         return JsonResponse(serializer.errors, status=400)
+
+
+class ArticleAPIView(APIView):
+
+    def get(self, request):
+        articles = Article.objects.all()
+        serializer = ArticleModelSerializer(articles, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = ArticleModelSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ArticleDetailView(APIView):
+
+    def get_object(self, id):
+        try:
+            return Article.objects.get(id=id)
+        except Article.DoesNotExist:
+            return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, id):
+        article = self.get_object(id)
+        serializer = ArticleModelSerializer(article)
+        return Response(serializer.data)
